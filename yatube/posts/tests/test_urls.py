@@ -102,4 +102,3 @@ class PostUrlTests(TestCase):
         response = self.guest_client.get(URL)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         self.assertTemplateUsed(response, 'core/404.html')
-  
