@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load cache %}
+{% load static %}
+{% load thumbnail %}
+{% cache 20 index_page %}
+    {% block title %}
+    Подписки пользователей
+    {% endblock %}
+
+    {% block content %}
+    <div class="container py-5">
+        <h1>
+        Посты тех авторов, на которых вы подписаны
+        </h1>
+        {% include 'posts/include/switcher.html' %}
+        {% for post in page_obj  %}
+            <article>
+            {% include 'posts/include/post_constructor.html' %}   
+            {% if post.group %}   
+            <a href="{% url 'posts:group_list' post.group.slug %}">
+                все записи группы "{{ post.group.title }}"
+            </a>
+            {% endif %}
+            <br>
+            <a href="{% url 'posts:post_detail' post.id %}">подробная информация </a>
+            </article>
+            {% if not forloop.last %}<hr>{% endif %}
+        {% endfor %}   
+        {% include 'posts/include/paginator.html' %}      
+    </div>
+    {% endblock %} 
+{% endcache %}
