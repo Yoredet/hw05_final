@@ -334,3 +334,16 @@ class FollowViewsTest(TestCase):
             )
         )
         self.assertNotIn(post, response.context['page_obj'].object_list)
+
+    def test_double_subscription(self):
+        """Нельзя подписаться два раза на одного автора."""
+        self.follower_client.get(
+            reverse('posts:profile_follow', kwargs={'username': self.author})
+        )
+        self.follower_client.get(
+            reverse('posts:profile_follow', kwargs={'username': self.author})
+        )
+        count = Follow.objects.filter(author_id=self.author,
+                                      user_id=self.follower
+                                      ).count()
+        self.assertEqual(count, 1)

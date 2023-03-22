@@ -3,8 +3,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path, include
 
+handler403 = 'core.views.csrf_failure'
 handler404 = 'core.views.page_not_found'
-
 
 urlpatterns = [
     path('admin/', admin.site.urls),
