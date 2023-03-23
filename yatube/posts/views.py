@@ -45,7 +45,7 @@ def profile(request, username):
         'author': author,
         'page_obj': get_paginator(request, posts, NUMBER_OF_POSTS),
         'following': following,
-        'followers': count_followers,
+        'count_followers': count_followers,
         'user': request.user,
     }
     return render(request, 'posts/profile.html', context)
