@@ -1,4 +1,3 @@
-from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
@@ -39,17 +38,14 @@ def group_post(request, slug):
 def profile(request, username):
     author = get_object_or_404(User, username=username)
     posts = author.posts.all()
-    if request.user.is_authenticated and Follow.objects.filter(
-            author=author, user=request.user).exists():
-        following = True
-    else:
-        following = False
-    followers = Follow.objects.filter(author__username=username).count()
+    following = request.user.is_authenticated and Follow.objects.filter(
+        author=author, user=request.user).exists()
+    count_followers = Follow.objects.filter(author__username=username).count()
     context = {
         'author': author,
         'page_obj': get_paginator(request, posts, NUMBER_OF_POSTS),
         'following': following,
-        'followers': followers,
+        'followers': count_followers,
         'user': request.user,
     }
     return render(request, 'posts/profile.html', context)
@@ -80,7 +76,6 @@ def post_create(request):
         return render(request, 'posts/create_post.html', context)
     post = form.save(commit=False)
     post.author = request.user
-    post.pub_date = datetime.now()
     post.save()
     return redirect('posts:profile', username=post.author)
 
@@ -91,17 +86,13 @@ def post_edit(request, post_id):
     is_edit = True
     if request.user != post.author:
         return redirect('posts:post_detail', post_id)
-    form = PostForm(request.POST or None, instance=post)
-    if request.method == "POST":
-        form = PostForm(request.POST or None,
-                        files=request.FILES or None,
-                        instance=post)
-        if form.is_valid():
-            post = form.save(commit=False)
-            post.author = request.user
-            post.pub_date = datetime.now()
-            post.save()
-            return redirect('posts:post_detail', post_id)
+    form = PostForm(request.POST or None,
+                    files=request.FILES or None,
+                    instance=post)
+    if form.is_valid():
+        post = form.save(commit=False)
+        post.save()
+        return redirect('posts:post_detail', post_id)
     else:
         form = PostForm(instance=post)
     context = {

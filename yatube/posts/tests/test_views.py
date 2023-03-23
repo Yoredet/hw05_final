@@ -191,24 +191,6 @@ class PostPagesTests(TestCase):
         )
         self.assertNotIn(self.post, response.context['page_obj'])
 
-    def test_cache_index_page(self):
-        """Проверяем работу кэша"""
-        new_post = Post.objects.create(
-            text='Тестируем кэш',
-            author=self.author
-        )
-        response_add = self.post_author.get(
-            reverse('posts:index')).content
-        new_post.delete()
-        response_delete = self.post_author.get(
-            reverse('posts:index')).content
-        self.assertEqual(response_add, response_delete)
-        cache.clear()
-        response_cache_clear = self.post_author.get(
-            reverse('posts:index')).content
-        self.assertNotEqual(response_add,
-                            response_cache_clear)
-
 
 class PaginatorViewsTest(TestCase):
     @classmethod
@@ -283,16 +265,18 @@ class FollowViewsTest(TestCase):
     def test_follow(self):
         """Проверка подписки на пользователя"""
         count_follow = Follow.objects.count()
-        self.follower_client.post(
+        self.follower_client.get(
             reverse(
                 'posts:profile_follow',
                 kwargs={'username': self.author}
             )
         )
         self.assertEqual(Follow.objects.count(), count_follow + 1)
-        follow = Follow.objects.all().latest('id')
-        self.assertEqual(follow.author, self.author)
-        self.assertEqual(follow.user, self.follower)
+        follow = Follow.objects.filter(
+            author=self.author,
+            user=self.follower
+        ).exists()
+        self.assertTrue(follow)
 
     def test_unfollow(self):
         """Проверка отписки от пользователя"""
@@ -347,3 +331,37 @@ class FollowViewsTest(TestCase):
                                       user_id=self.follower
                                       ).count()
         self.assertEqual(count, 1)
+
+
+class CacheViewsTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.author = User.objects.create_user(username='test_user')
+        cls.post = Post.objects.create(
+            text='Тестовая запись',
+            author=cls.author
+        )
+
+    def setUp(self):
+        self.post_author = Client()
+        self.post_author.force_login(self.author)
+        cache.clear()
+
+    def test_cache_index_page(self):
+        """Проверяем работу кэша"""
+        new_post = Post.objects.create(
+            text='Тестируем кэш',
+            author=self.author
+        )
+        response_add = self.post_author.get(
+            reverse('posts:index')).content
+        new_post.delete()
+        response_delete = self.post_author.get(
+            reverse('posts:index')).content
+        self.assertEqual(response_add, response_delete)
+        cache.clear()
+        response_cache_clear = self.post_author.get(
+            reverse('posts:index')).content
+        self.assertNotEqual(response_add,
+                            response_cache_clear)
